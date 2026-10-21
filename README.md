@@ -8,10 +8,11 @@ Bilingual (EN primary, CN secondary) Early Access page for the local-first Chrom
 
 - Host: GitHub Pages (`go-Mario/local-tab-workspaces`)
 - Repo: https://github.com/go-Mario/local-tab-workspaces
+- Operator (legal name on site): **LIAO XIANG** — individual indie developer based in China (must match Creem merchant onboarding)
 - Support email on site: `lililiaoxiang0913@gmail.com` (must match Creem merchant form)
-- Legal: `/privacy.html`, `/terms.html` (linked in footer)
+- Legal: `/privacy.html`, `/terms.html` (linked in footer; both name operator LIAO XIANG)
 - Creem `$1` CTA → `https://www.creem.io/payment/prod_1sxcev5EyzFKkDzSRj3ZSs`
-- Updated: 2026-10-21 Asia/Shanghai (UTC+8) — Privacy/Terms + support email for Creem review
+- Updated: 2026-10-21 Asia/Shanghai (UTC+8) — added operator legal name LIAO XIANG for Creem change request
 
 **Do not use** the temporary beacon URL for Creem submission.
 

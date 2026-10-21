@@ -1,0 +1,26 @@
+{
+  "permanent_url": "https://go-mario.github.io/local-tab-workspaces/",
+  "privacy_url": "https://go-mario.github.io/local-tab-workspaces/privacy.html",
+  "terms_url": "https://go-mario.github.io/local-tab-workspaces/terms.html",
+  "repo": "https://github.com/go-Mario/local-tab-workspaces",
+  "host": "github-pages",
+  "owner": "go-Mario",
+  "operator_legal_name": "LIAO XIANG",
+  "operator_note": "individual indie developer based in China; legal name on site matches Creem merchant onboarding",
+  "support_email": "lililiaoxiang0913@gmail.com",
+  "deployed_at_asia_shanghai": "2026-10-21 20:15 Asia/Shanghai (UTC+8)",
+  "commit": "pending",
+  "creem_payment": "https://www.creem.io/payment/prod_1sxcev5EyzFKkDzSRj3ZSs",
+  "temporary_beacon": "https://squat-mocha-41.beacon.host/",
+  "creem_change_request": "website identifies operator legal name LIAO XIANG",
+  "verified": {
+    "http_index": null,
+    "http_privacy": null,
+    "http_terms": null,
+    "support_email": true,
+    "privacy_terms_links": true,
+    "creem_cta": true,
+    "operator_legal_name_liao_xiang": true,
+    "no_hello_example_com": true
+  }
+}
