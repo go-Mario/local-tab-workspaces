@@ -577,9 +577,13 @@
           <span lang="zh-CN">插件可装时会通知你。</span>
         </p>
 
-        <form id="waitlist-form" action="#" method="get" novalidate>
+        <form id="waitlist-form" action="https://formsubmit.co/ajax/8a8116954090664d2c206e229cbb4e04" method="POST" novalidate>
           <label for="email">Email</label>
           <input id="email" name="email" type="email" required placeholder="you@example.com" autocomplete="email" />
+          <input type="text" name="_honey" value="" tabindex="-1" autocomplete="off" aria-hidden="true" style="position:absolute;left:-9999px;height:0;width:0;opacity:0;" />
+          <input type="hidden" name="_subject" value="Local Tab Workspaces — Early Access waitlist" />
+          <input type="hidden" name="_template" value="table" />
+          <input type="hidden" name="_captcha" value="false" />
 
           <label class="check">
             <input type="checkbox" name="need_sync" value="1" />
@@ -591,7 +595,7 @@
 
           <div class="form-actions">
             <button class="btn btn-primary" type="submit">Join waitlist</button>
-            <span class="note">Form does not post yet — email is kept in this browser only for the demo.</span>
+            <span class="note">Submissions email <strong>lililiaoxiang0913@gmail.com</strong> (FormSubmit). A local copy is also saved in this browser.</span>
           </div>
           <p class="form-status" id="waitlist-status" role="status">You’re on the list. Thanks — we’ll email when Early Access opens.</p>
         </form>
@@ -630,6 +634,7 @@
     (function () {
       var form = document.getElementById("waitlist-form");
       var status = document.getElementById("waitlist-status");
+      var endpoint = "https://formsubmit.co/ajax/8a8116954090664d2c206e229cbb4e04";
       if (!form) return;
       form.addEventListener("submit", function (e) {
         e.preventDefault();
@@ -639,14 +644,47 @@
           return;
         }
         var needSync = !!(form.need_sync && form.need_sync.checked);
+        var btn = form.querySelector('button[type="submit"]');
+        if (btn) { btn.disabled = true; btn.textContent = "Sending…"; }
         try {
           var key = "ltw_waitlist";
           var list = JSON.parse(localStorage.getItem(key) || "[]");
-          list.push({ email: email, needSync: needSync, at: new Date().toISOString() });
+          list.push({ email: email, needSync: needSync, at: new Date().toISOString(), source: "landing" });
           localStorage.setItem(key, JSON.stringify(list));
         } catch (err) { /* ignore quota / private mode */ }
-        status.classList.add("show");
-        form.reset();
+        var payload = {
+          email: email,
+          need_sync: needSync ? "yes" : "no",
+          message: "Early Access waitlist signup",
+          _subject: "Local Tab Workspaces — Early Access waitlist",
+          _template: "table",
+          _captcha: "false",
+          _honey: ""
+        };
+        fetch(endpoint, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "Accept": "application/json" },
+          body: JSON.stringify(payload)
+        }).then(function (res) { return res.json().catch(function () { return {}; }).then(function (data) {
+          return { ok: res.ok, data: data };
+        }); }).then(function (result) {
+          if (result.ok || (result.data && (result.data.success === "true" || result.data.success === true))) {
+            status.style.color = "";
+            status.textContent = "You’re on the list. Thanks — we’ll email when Early Access opens.";
+            status.classList.add("show");
+            form.reset();
+          } else {
+            status.style.color = "var(--warn)";
+            status.textContent = "Saved locally. Email delivery may be delayed — try again or write lililiaoxiang0913@gmail.com.";
+            status.classList.add("show");
+          }
+        }).catch(function () {
+          status.style.color = "var(--warn)";
+          status.textContent = "Saved in this browser. If email failed, contact lililiaoxiang0913@gmail.com.";
+          status.classList.add("show");
+        }).finally(function () {
+          if (btn) { btn.disabled = false; btn.textContent = "Join waitlist"; }
+        });
       });
     })();
   </script>

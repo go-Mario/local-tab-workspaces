@@ -4,11 +4,11 @@ Bilingual (EN primary, CN secondary) Early Access page for the local-first Chrom
 
 ## Creem product website URL (use this — NOT github.io)
 
-**https://slender-yttrium-ml4at.ship.place/**
+**https://grave-glider-tye4w.ship.place/**
 
 - Host: ship.page anonymous HTTPS (static; verified HTTP 200)
 - Anonymous free plan expires ~**2026-11-20** (Asia/Shanghai ≈ 2026-11-20 20:06); claim to keep longer:
-  https://ship.page/claim?slug=slender-yttrium-ml4at&token=spc_ia34d5zsvqp6ybeu5vz719wf&via=api
+  https://ship.page/claim?slug=grave-glider-tye4w&token=spc_4xmt7j7gztspwwt8di15q67x&via=api
 - Operator (legal name on site): **LIAO XIANG** — individual indie developer based in China (matches Creem merchant onboarding)
 - Support email: `lililiaoxiang0913@gmail.com`
 - Legal: `/privacy.html`, `/terms.html` (both name operator LIAO XIANG)
@@ -29,6 +29,10 @@ https://local-tab-workspaces.beacon.host/ (anonymous ≈24h; expires ~2026-10-22
 ## Previous temporary URL (do not submit)
 
 https://squat-mocha-41.beacon.host/
+
+## Waitlist
+
+Form posts to **FormSubmit** → `lililiaoxiang0913@gmail.com` (endpoint alias `8a8116954090664d2c206e229cbb4e04`). Also keeps a localStorage copy.
 
 ## Files
 
