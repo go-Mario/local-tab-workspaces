@@ -1,8 +1,8 @@
 {
-  "creem_product_website_url": "https://grave-glider-tye4w.ship.place/",
-  "permanent_url": "https://grave-glider-tye4w.ship.place/",
-  "privacy_url": "https://grave-glider-tye4w.ship.place/privacy.html",
-  "terms_url": "https://grave-glider-tye4w.ship.place/terms.html",
+  "creem_product_website_url": "https://localtabs.dpdns.org/",
+  "permanent_url": "https://localtabs.dpdns.org/",
+  "privacy_url": "https://localtabs.dpdns.org/privacy.html",
+  "terms_url": "https://localtabs.dpdns.org/terms.html",
   "host": "ship.page",
   "ship_slug": "grave-glider-tye4w",
   "ship_expires_at_utc": "2026-11-20T12:48:08.993Z",
@@ -13,13 +13,13 @@
   "operator_legal_name": "LIAO XIANG",
   "operator_note": "individual indie developer based in China; legal name on site matches Creem merchant onboarding",
   "support_email": "lililiaoxiang0913@gmail.com",
-  "deployed_at_asia_shanghai": "2026-10-21 20:48 Asia/Shanghai (UTC+8)",
+  "deployed_at_asia_shanghai": "2026-10-21 22:33 Asia/Shanghai (UTC+8)",
   "commit": "325e0ac",
   "creem_payment": "https://www.creem.io/payment/prod_1sxcev5EyzFKkDzSRj3ZSs",
   "beacon_backup": "https://local-tab-workspaces.beacon.host/",
   "temporary_beacon_old": "https://squat-mocha-41.beacon.host/",
   "creem_change_request": "website identifies operator legal name LIAO XIANG; non-github.io production domain",
-  "note": "Waitlist \u2192 FormSubmit email lililiaoxiang0913@gmail.com. Anonymous ship.page cannot overwrite prior slug; Creem should use permanent_url.",
+  "note": "Waitlist → FormSubmit. Primary CTA Get Early Access — $1 uses creem_payment when set; otherwise Checkout opening soon / waitlist.",
   "verified": {
     "http_index": 200,
     "http_privacy": 200,
@@ -36,5 +36,8 @@
   "form_backend": "formsubmit",
   "formsubmit_endpoint": "https://formsubmit.co/ajax/8a8116954090664d2c206e229cbb4e04",
   "formsubmit_alias": "8a8116954090664d2c206e229cbb4e04",
-  "waitlist_email": "lililiaoxiang0913@gmail.com"
+  "waitlist_email": "lililiaoxiang0913@gmail.com",
+  "custom_domain": "localtabs.dpdns.org",
+  "early_access_cta": "Get Early Access — $1",
+  "early_access_cta_behavior": "wired_to_creem_payment_when_url_set_else_checkout_opening_soon"
 }

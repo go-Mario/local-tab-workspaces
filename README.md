@@ -4,7 +4,7 @@ Bilingual (EN primary, CN secondary) Early Access page for the local-first Chrom
 
 ## Creem product website URL (use this — NOT github.io)
 
-**https://grave-glider-tye4w.ship.place/**
+**https://localtabs.dpdns.org/**
 
 - Host: ship.page anonymous HTTPS (static; verified HTTP 200)
 - Anonymous free plan expires ~**2026-11-20** (Asia/Shanghai ≈ 2026-11-20 20:06); claim to keep longer:
@@ -12,7 +12,8 @@ Bilingual (EN primary, CN secondary) Early Access page for the local-first Chrom
 - Operator (legal name on site): **LIAO XIANG** — individual indie developer based in China (matches Creem merchant onboarding)
 - Support email: `lililiaoxiang0913@gmail.com`
 - Legal: `/privacy.html`, `/terms.html` (both name operator LIAO XIANG)
-- Creem `$1` CTA → `https://www.creem.io/payment/prod_1sxcev5EyzFKkDzSRj3ZSs`
+- Primary CTA **Get Early Access — $1** → `https://www.creem.io/payment/prod_1sxcev5EyzFKkDzSRj3ZSs` (empty URL falls back to waitlist / “Checkout opening soon”)
+- Live site: `https://localtabs.dpdns.org`
 - Updated: 2026-10-21 Asia/Shanghai (UTC+8) — non-github.io deploy for Creem production-domain request
 
 ## Mirror (GitHub Pages — backup only, do not submit to Creem)

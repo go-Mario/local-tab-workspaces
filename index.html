@@ -170,6 +170,20 @@
       color: var(--warn);
       font-variant-numeric: tabular-nums;
     }
+    .btn-primary .price {
+      color: #fff;
+      opacity: 0.95;
+      font-variant-numeric: tabular-nums;
+    }
+    .btn-soon {
+      background: #1a2433;
+      border-color: #3a4d6a;
+      color: var(--muted);
+      cursor: default;
+      pointer-events: none;
+    }
+    .btn-soon:hover { background: #1a2433; color: var(--muted); }
+
 
     .note {
       color: #6f7d93;
@@ -444,12 +458,10 @@
         </p>
       </div>
       <div class="cta-row">
-        <a class="btn btn-primary" href="#waitlist">Join Early Access waitlist</a>
-        <a class="btn btn-hold" href="https://www.creem.io/payment/prod_1sxcev5EyzFKkDzSRj3ZSs">
-          Reserve Early Access · <span class="price">$1</span> hold
-        </a>
+        <a id="cta-early-access" class="btn btn-primary" data-creem-cta href="#waitlist">Get Early Access — <span class="price">$1</span></a>
+        <a class="btn btn-ghost" href="#waitlist">Join free waitlist</a>
       </div>
-      <p class="note">Not listed on the Chrome Web Store yet. Local forever stays free — sync is the only paid tier.</p>
+      <p class="note" id="cta-note">Not listed on the Chrome Web Store yet. Local forever stays free — sync is the only paid tier. $1 Early Access is paid via Creem when checkout is open.</p>
     </section>
 
     <section class="panels" id="panels" aria-label="Product preview">
@@ -603,15 +615,15 @@
         <div class="divider"></div>
 
         <div class="hold-block">
-          <h3>Strong intent · $1 hold</h3>
+          <h3>Strong intent · $1 Early Access</h3>
           <p>
-            Reserve Early Access with a <strong>$1</strong> hold to signal you’d pay for sync later.
+            Get Early Access with a <strong>$1</strong> hold to signal you’d pay for sync later.
             <span lang="zh-CN" style="display:block;margin-top:0.25rem">用 $1 占位锁定 Early Access，验证真实付费意愿。</span>
           </p>
-          <a class="btn btn-hold" href="https://www.creem.io/payment/prod_1sxcev5EyzFKkDzSRj3ZSs">
-            Reserve Early Access · <span class="price">$1</span> hold
+          <a id="cta-early-access-hold" class="btn btn-hold" data-creem-cta href="#waitlist">
+            Get Early Access — <span class="price">$1</span>
           </a>
-          <p class="note" style="margin-top:0.65rem">Paid via Creem. If Early Access cannot be delivered, refunds by email within 14 days of purchase.</p>
+          <p class="note" id="hold-note" style="margin-top:0.65rem">Paid via Creem when checkout is open. If Early Access cannot be delivered, refunds by email within 14 days of purchase.</p>
         </div>
       </div>
     </section>
@@ -629,6 +641,42 @@
       </div>
     </footer>
   </div>
+
+
+  <script>
+    (function () {
+      // Single source for Creem checkout. Empty string = not ready → waitlist / "Checkout opening soon".
+      // Value from deploy-meta.json creem_payment (do not invent URLs).
+      var CREEM_PAYMENT_URL = "https://www.creem.io/payment/prod_1sxcev5EyzFKkDzSRj3ZSs";
+      var ctas = document.querySelectorAll("[data-creem-cta]");
+      var holdNote = document.getElementById("hold-note");
+      if (CREEM_PAYMENT_URL && /^https:\/\/www\.creem\.io\/payment\//.test(CREEM_PAYMENT_URL)) {
+        ctas.forEach(function (el) {
+          el.setAttribute("href", CREEM_PAYMENT_URL);
+          el.setAttribute("rel", "noopener noreferrer");
+          el.setAttribute("target", "_blank");
+        });
+        if (holdNote) {
+          holdNote.textContent = "Paid via Creem. If Early Access cannot be delivered, refunds by email within 14 days of purchase.";
+        }
+      } else {
+        ctas.forEach(function (el) {
+          el.setAttribute("href", "#waitlist");
+          el.removeAttribute("target");
+          if (el.id === "cta-early-access") {
+            el.textContent = "Checkout opening soon";
+            el.classList.remove("btn-primary");
+            el.classList.add("btn-soon");
+          } else {
+            el.textContent = "Checkout opening soon — join waitlist";
+          }
+        });
+        if (holdNote) {
+          holdNote.textContent = "Checkout opening soon. Join the free waitlist above and we’ll email when $1 Early Access is live.";
+        }
+      }
+    })();
+  </script>
 
   <script>
     (function () {
