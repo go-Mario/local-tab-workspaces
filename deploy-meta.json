@@ -14,7 +14,7 @@
   "operator_note": "individual indie developer based in China; legal name on site matches Creem merchant onboarding",
   "support_email": "lililiaoxiang0913@gmail.com",
   "deployed_at_asia_shanghai": "2026-10-21 20:48 Asia/Shanghai (UTC+8)",
-  "commit": "c1a7840",
+  "commit": "325e0ac",
   "creem_payment": "https://www.creem.io/payment/prod_1sxcev5EyzFKkDzSRj3ZSs",
   "beacon_backup": "https://local-tab-workspaces.beacon.host/",
   "temporary_beacon_old": "https://squat-mocha-41.beacon.host/",
