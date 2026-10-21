@@ -13,13 +13,13 @@
   "operator_legal_name": "LIAO XIANG",
   "operator_note": "individual indie developer based in China; legal name on site matches Creem merchant onboarding",
   "support_email": "lililiaoxiang0913@gmail.com",
-  "deployed_at_asia_shanghai": "2026-10-21 22:33 Asia/Shanghai (UTC+8)",
+  "deployed_at_asia_shanghai": "2026-10-21 22:35 Asia/Shanghai (UTC+8)",
   "commit": "325e0ac",
   "creem_payment": "https://www.creem.io/payment/prod_1sxcev5EyzFKkDzSRj3ZSs",
   "beacon_backup": "https://local-tab-workspaces.beacon.host/",
   "temporary_beacon_old": "https://squat-mocha-41.beacon.host/",
   "creem_change_request": "website identifies operator legal name LIAO XIANG; non-github.io production domain",
-  "note": "Waitlist → FormSubmit. Primary CTA Get Early Access — $1 uses creem_payment when set; otherwise Checkout opening soon / waitlist.",
+  "note": "Waitlist → FormSubmit. Primary CTA Get Early Access — $1 uses creem_payment when set; otherwise Checkout opening soon / waitlist. | 2026-10-21 privacy CWS patch",
   "verified": {
     "http_index": 200,
     "http_privacy": 200,
@@ -39,5 +39,6 @@
   "waitlist_email": "lililiaoxiang0913@gmail.com",
   "custom_domain": "localtabs.dpdns.org",
   "early_access_cta": "Get Early Access — $1",
-  "early_access_cta_behavior": "wired_to_creem_payment_when_url_set_else_checkout_opening_soon"
+  "early_access_cta_behavior": "wired_to_creem_payment_when_url_set_else_checkout_opening_soon",
+  "privacy_patch": "CWS §5: extension permissions, no URL upload without sync, user controls, no analytics SDKs; waitlist FormSubmit clarified"
 }
