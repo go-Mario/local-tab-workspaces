@@ -1,0 +1,646 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Local Tab Workspaces — Unlimited local · Sync optional</title>
+  <meta name="description" content="Chrome extension: unlimited local save & restore of tab groups. No account required. Pay only for optional cross-device sync." />
+  <style>
+    :root {
+      --bg: #0b0f14;
+      --bg-elev: #121821;
+      --bg-panel: #161d28;
+      --border: #243044;
+      --text: #e8eef7;
+      --muted: #93a0b4;
+      --accent: #5b8cff;
+      --accent-hover: #7aa0ff;
+      --good: #3dd68c;
+      --warn: #f5a524;
+      --radius: 14px;
+      --shadow: 0 18px 50px rgba(0, 0, 0, 0.35);
+      --font: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, "PingFang SC", "Noto Sans SC", "Microsoft YaHei", sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      font-family: var(--font);
+      background:
+        radial-gradient(1200px 600px at 10% -10%, rgba(91, 140, 255, 0.18), transparent 55%),
+        radial-gradient(900px 500px at 90% 0%, rgba(61, 214, 140, 0.10), transparent 50%),
+        var(--bg);
+      color: var(--text);
+      line-height: 1.55;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { color: var(--accent-hover); }
+
+    .wrap {
+      width: min(1080px, calc(100% - 2rem));
+      margin: 0 auto;
+    }
+
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      padding: 1.25rem 0;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 0.65rem;
+      font-weight: 650;
+      letter-spacing: -0.02em;
+    }
+
+    .logo-mark {
+      width: 28px;
+      height: 28px;
+      border-radius: 8px;
+      background: linear-gradient(135deg, #5b8cff, #3dd68c);
+      box-shadow: 0 0 0 1px rgba(255,255,255,0.08) inset;
+    }
+
+    nav { display: flex; gap: 0.75rem; flex-wrap: wrap; }
+    .nav-link {
+      color: var(--muted);
+      font-size: 0.92rem;
+      padding: 0.35rem 0.55rem;
+    }
+    .nav-link:hover { color: var(--text); }
+
+    .hero {
+      padding: 2.5rem 0 1.5rem;
+      display: grid;
+      gap: 1.75rem;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0.3rem 0.7rem;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: rgba(18, 24, 33, 0.8);
+      color: var(--muted);
+      font-size: 0.82rem;
+      width: fit-content;
+    }
+    .badge .dot {
+      width: 7px; height: 7px; border-radius: 50%;
+      background: var(--good);
+      box-shadow: 0 0 0 3px rgba(61, 214, 140, 0.2);
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(1.85rem, 4.2vw, 3rem);
+      line-height: 1.15;
+      letter-spacing: -0.03em;
+      max-width: 16ch;
+    }
+
+    .headline-cn {
+      margin: 0.55rem 0 0;
+      color: var(--muted);
+      font-size: clamp(1rem, 2.2vw, 1.25rem);
+      font-weight: 500;
+    }
+
+    .sub {
+      margin: 1rem 0 0;
+      max-width: 52ch;
+      color: var(--muted);
+      font-size: 1.05rem;
+    }
+    .sub-cn {
+      margin: 0.35rem 0 0;
+      max-width: 52ch;
+      color: #7d8aa0;
+      font-size: 0.95rem;
+    }
+
+    .cta-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      margin-top: 0.5rem;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.45rem;
+      border-radius: 12px;
+      padding: 0.85rem 1.15rem;
+      font-weight: 600;
+      font-size: 0.98rem;
+      border: 1px solid transparent;
+      cursor: pointer;
+      transition: background 0.15s, border-color 0.15s, transform 0.1s;
+    }
+    .btn:active { transform: translateY(1px); }
+    .btn-primary {
+      background: var(--accent);
+      color: #fff;
+    }
+    .btn-primary:hover { background: var(--accent-hover); color: #fff; }
+    .btn-ghost {
+      background: transparent;
+      border-color: var(--border);
+      color: var(--text);
+    }
+    .btn-ghost:hover { border-color: #3a4d6a; background: rgba(255,255,255,0.03); color: var(--text); }
+    .btn-hold {
+      background: linear-gradient(180deg, #1a2433, #141b26);
+      border-color: #3a4d6a;
+      color: var(--text);
+    }
+    .btn-hold:hover { border-color: var(--warn); color: #fff; }
+    .btn-hold .price {
+      color: var(--warn);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .note {
+      color: #6f7d93;
+      font-size: 0.85rem;
+      margin: 0.25rem 0 0;
+    }
+
+    .panels {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1rem;
+      padding: 1rem 0 2.5rem;
+    }
+    @media (max-width: 880px) {
+      .panels { grid-template-columns: 1fr; }
+      h1 { max-width: none; }
+    }
+
+    .panel {
+      background: var(--bg-elev);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+      box-shadow: var(--shadow);
+    }
+    .panel-label {
+      padding: 0.85rem 1rem 0.35rem;
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--muted);
+    }
+    .panel-title {
+      padding: 0 1rem;
+      font-weight: 650;
+      font-size: 1.05rem;
+      letter-spacing: -0.02em;
+    }
+    .panel-title-cn {
+      padding: 0.15rem 1rem 0.75rem;
+      color: #7d8aa0;
+      font-size: 0.88rem;
+    }
+
+    /* Fake UI chrome */
+    .fake {
+      margin: 0 0.85rem 1rem;
+      background: var(--bg-panel);
+      border: 1px solid #2a384f;
+      border-radius: 12px;
+      overflow: hidden;
+      font-size: 0.82rem;
+    }
+    .fake-bar {
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+      padding: 0.55rem 0.7rem;
+      background: #0e131b;
+      border-bottom: 1px solid #243044;
+    }
+    .fake-dot { width: 8px; height: 8px; border-radius: 50%; background: #3a4a63; }
+    .fake-dot:nth-child(1) { background: #ff5f57; }
+    .fake-dot:nth-child(2) { background: #febc2e; }
+    .fake-dot:nth-child(3) { background: #28c840; }
+    .fake-body { padding: 0.75rem; display: grid; gap: 0.55rem; }
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      padding: 0.25rem 0.55rem;
+      border-radius: 999px;
+      background: rgba(91, 140, 255, 0.12);
+      color: #a8c2ff;
+      font-size: 0.75rem;
+      width: fit-content;
+    }
+    .chip.green {
+      background: rgba(61, 214, 140, 0.12);
+      color: #8eebc0;
+    }
+    .row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.5rem;
+      padding: 0.55rem 0.65rem;
+      background: #101722;
+      border: 1px solid #243044;
+      border-radius: 9px;
+    }
+    .row strong { font-weight: 600; font-size: 0.86rem; }
+    .muted-sm { color: var(--muted); font-size: 0.75rem; }
+    .pill-btn {
+      padding: 0.28rem 0.55rem;
+      border-radius: 7px;
+      background: var(--accent);
+      color: #fff;
+      font-size: 0.72rem;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+    .pill-btn.ghost {
+      background: transparent;
+      border: 1px solid #3a4d6a;
+      color: var(--text);
+    }
+    .toggle {
+      width: 36px; height: 20px; border-radius: 999px;
+      background: #2a384f; position: relative; flex-shrink: 0;
+    }
+    .toggle.on { background: rgba(91, 140, 255, 0.55); }
+    .toggle::after {
+      content: "";
+      position: absolute; top: 3px; left: 3px;
+      width: 14px; height: 14px; border-radius: 50%;
+      background: #fff;
+      transition: left 0.15s;
+    }
+    .toggle.on::after { left: 19px; }
+    .price-tag {
+      color: var(--warn);
+      font-weight: 650;
+      font-size: 0.8rem;
+    }
+
+    .features {
+      padding: 0.5rem 0 2.5rem;
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 0.85rem;
+    }
+    @media (max-width: 640px) {
+      .features { grid-template-columns: 1fr; }
+    }
+    .feat {
+      border: 1px solid var(--border);
+      background: rgba(18, 24, 33, 0.65);
+      border-radius: 12px;
+      padding: 1rem 1.1rem;
+    }
+    .feat h3 {
+      margin: 0 0 0.25rem;
+      font-size: 1rem;
+      letter-spacing: -0.02em;
+    }
+    .feat p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.92rem;
+    }
+    .feat .cn {
+      margin-top: 0.35rem;
+      color: #7d8aa0;
+      font-size: 0.85rem;
+    }
+
+    #waitlist {
+      padding: 0 0 3rem;
+    }
+    .form-card {
+      border: 1px solid var(--border);
+      background: var(--bg-elev);
+      border-radius: calc(var(--radius) + 2px);
+      padding: 1.35rem 1.4rem 1.5rem;
+      box-shadow: var(--shadow);
+    }
+    .form-card h2 {
+      margin: 0;
+      font-size: 1.35rem;
+      letter-spacing: -0.02em;
+    }
+    .form-card .lead {
+      margin: 0.4rem 0 1.1rem;
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+    label {
+      display: block;
+      font-size: 0.85rem;
+      color: var(--muted);
+      margin-bottom: 0.35rem;
+    }
+    input[type="email"] {
+      width: 100%;
+      padding: 0.8rem 0.9rem;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: #0e131b;
+      color: var(--text);
+      font: inherit;
+      margin-bottom: 0.9rem;
+    }
+    input[type="email"]:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(91, 140, 255, 0.2);
+    }
+    .check {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.55rem;
+      margin: 0 0 1rem;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+    .check input { margin-top: 0.25rem; accent-color: var(--accent); }
+    .form-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.65rem;
+      align-items: center;
+    }
+    .form-status {
+      margin: 0.85rem 0 0;
+      font-size: 0.9rem;
+      color: var(--good);
+      display: none;
+    }
+    .form-status.show { display: block; }
+    .divider {
+      height: 1px;
+      background: var(--border);
+      margin: 1.35rem 0;
+    }
+    .hold-block h3 {
+      margin: 0 0 0.35rem;
+      font-size: 1.05rem;
+    }
+    .hold-block p {
+      margin: 0 0 0.9rem;
+      color: var(--muted);
+      font-size: 0.92rem;
+    }
+
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 1.5rem 0 2.5rem;
+      color: #6f7d93;
+      font-size: 0.85rem;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem 1.25rem;
+      justify-content: space-between;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="logo">
+        <span class="logo-mark" aria-hidden="true"></span>
+        <span>Local Tab Workspaces</span>
+      </div>
+      <nav>
+        <a class="nav-link" href="#panels">How it works</a>
+        <a class="nav-link" href="#waitlist">Early Access</a>
+      </nav>
+    </header>
+
+    <section class="hero">
+      <div class="badge"><span class="dot" aria-hidden="true"></span> Chrome extension · Early Access</div>
+      <div>
+        <h1>Unlimited local tab workspaces. Sync only if you want.</h1>
+        <p class="headline-cn" lang="zh-CN">标签组本地无限保存，同步可选</p>
+        <p class="sub">
+          Save &amp; restore tab groups on your machine for free—no account required.
+          JSON export anytime. Pay only when you need optional cross-device sync.
+        </p>
+        <p class="sub-cn" lang="zh-CN">
+          Chrome 插件：无限保存与一键恢复标签组，本地免费、无需登录；随时 JSON 导出。只有跨设备同步才收费。
+        </p>
+      </div>
+      <div class="cta-row">
+        <a class="btn btn-primary" href="#waitlist">Join Early Access waitlist</a>
+        <a class="btn btn-hold" href="https://www.creem.io/payment/prod_1sxcev5EyzFKkDzSRj3ZSs">
+          Reserve Early Access · <span class="price">$1</span> hold
+        </a>
+      </div>
+      <p class="note">Not listed on the Chrome Web Store yet. Local forever stays free — sync is the only paid tier.</p>
+    </section>
+
+    <section class="panels" id="panels" aria-label="Product preview">
+      <!-- Panel 1 -->
+      <article class="panel">
+        <div class="panel-label">01 · Core workflow</div>
+        <div class="panel-title">Save this window · Restore in one click</div>
+        <div class="panel-title-cn" lang="zh-CN">一键保存当前标签组 · 随时恢复</div>
+        <div class="fake" aria-hidden="true">
+          <div class="fake-bar">
+            <span class="fake-dot"></span><span class="fake-dot"></span><span class="fake-dot"></span>
+            <span class="muted-sm" style="margin-left:0.4rem">Current window · 12 tabs</span>
+          </div>
+          <div class="fake-body">
+            <button class="pill-btn" type="button" tabindex="-1">Save as workspace</button>
+            <div class="row">
+              <div>
+                <strong>Research</strong>
+                <div class="muted-sm">8 tabs · saved today</div>
+              </div>
+              <span class="pill-btn ghost" tabindex="-1">Restore</span>
+            </div>
+            <div class="row">
+              <div>
+                <strong>Shopping</strong>
+                <div class="muted-sm">5 tabs · yesterday</div>
+              </div>
+              <span class="pill-btn ghost" tabindex="-1">Restore</span>
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <!-- Panel 2 -->
+      <article class="panel">
+        <div class="panel-label">02 · Local-first</div>
+        <div class="panel-title">Unlimited on your device · No account · Export anytime</div>
+        <div class="panel-title-cn" lang="zh-CN">本地无限 · 无需账号 · 随时导出</div>
+        <div class="fake" aria-hidden="true">
+          <div class="fake-bar">
+            <span class="fake-dot"></span><span class="fake-dot"></span><span class="fake-dot"></span>
+            <span class="muted-sm" style="margin-left:0.4rem">Settings</span>
+          </div>
+          <div class="fake-body">
+            <span class="chip green">Local · Offline OK</span>
+            <div class="row">
+              <div>
+                <strong>47 workspaces</strong>
+                <div class="muted-sm">Unlimited · no login wall</div>
+              </div>
+            </div>
+            <div class="row">
+              <span class="muted-sm">Export JSON / Import</span>
+              <span class="pill-btn ghost" tabindex="-1">Always on</span>
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <!-- Panel 3 -->
+      <article class="panel">
+        <div class="panel-label">03 · Paid boundary</div>
+        <div class="panel-title">Sync is optional. Local stays free.</div>
+        <div class="panel-title-cn" lang="zh-CN">同步可选。本地永远免费。</div>
+        <div class="fake" aria-hidden="true">
+          <div class="fake-bar">
+            <span class="fake-dot"></span><span class="fake-dot"></span><span class="fake-dot"></span>
+            <span class="muted-sm" style="margin-left:0.4rem">Sync</span>
+          </div>
+          <div class="fake-body">
+            <div class="row">
+              <div>
+                <strong>Cross-device sync</strong>
+                <div class="muted-sm">Off by default</div>
+              </div>
+              <span class="toggle" aria-hidden="true"></span>
+            </div>
+            <div class="row">
+              <div>
+                <strong>Local save / restore</strong>
+                <div class="muted-sm">Free forever</div>
+              </div>
+              <span class="chip green">Free</span>
+            </div>
+            <div class="row">
+              <div>
+                <strong>Early Access sync</strong>
+                <div class="muted-sm">Laptop · Desktop</div>
+              </div>
+              <span class="price-tag">Paid</span>
+            </div>
+          </div>
+        </div>
+      </article>
+    </section>
+
+    <section class="features" aria-label="Value props">
+      <div class="feat">
+        <h3>Unlimited local saves</h3>
+        <p>No artificial cap on workspaces or tabs on one machine.</p>
+        <p class="cn" lang="zh-CN">单机无限保存，不设人为额度墙。</p>
+      </div>
+      <div class="feat">
+        <h3>No account required</h3>
+        <p>Core features work offline. Your tabs stay on your device first.</p>
+        <p class="cn" lang="zh-CN">核心功能无需登录，离线可用；标签先留在你的电脑。</p>
+      </div>
+      <div class="feat">
+        <h3>JSON import / export</h3>
+        <p>Leave anytime. Bring your workspaces with you.</p>
+        <p class="cn" lang="zh-CN">随时导出 JSON，数据可带走。</p>
+      </div>
+      <div class="feat">
+        <h3>Pay only for sync</h3>
+        <p>We won’t charge you to keep saving locally—only for optional cross-device sync.</p>
+        <p class="cn" lang="zh-CN">不为「继续本地保存」收费，只为可选跨设备同步收费。</p>
+      </div>
+    </section>
+
+    <section id="waitlist">
+      <div class="form-card">
+        <h2>Join Early Access waitlist</h2>
+        <p class="lead">
+          Get notified when the Chrome build is ready.
+          <span lang="zh-CN">插件可装时会通知你。</span>
+        </p>
+
+        <form id="waitlist-form" action="#" method="get" novalidate>
+          <label for="email">Email</label>
+          <input id="email" name="email" type="email" required placeholder="you@example.com" autocomplete="email" />
+
+          <label class="check">
+            <input type="checkbox" name="need_sync" value="1" />
+            <span>
+              I need cross-device sync
+              <span lang="zh-CN" style="display:block;color:#7d8aa0;font-size:0.85rem;margin-top:0.15rem">我需要跨设备同步</span>
+            </span>
+          </label>
+
+          <div class="form-actions">
+            <button class="btn btn-primary" type="submit">Join waitlist</button>
+            <span class="note">Form does not post yet — email is kept in this browser only for the demo.</span>
+          </div>
+          <p class="form-status" id="waitlist-status" role="status">You’re on the list. Thanks — we’ll email when Early Access opens.</p>
+        </form>
+
+        <div class="divider"></div>
+
+        <div class="hold-block">
+          <h3>Strong intent · $1 hold</h3>
+          <p>
+            Reserve Early Access with a <strong>$1</strong> hold to signal you’d pay for sync later.
+            <span lang="zh-CN" style="display:block;margin-top:0.25rem">用 $1 占位锁定 Early Access，验证真实付费意愿。</span>
+          </p>
+          <a class="btn btn-hold" href="https://www.creem.io/payment/prod_1sxcev5EyzFKkDzSRj3ZSs">
+            Reserve Early Access · <span class="price">$1</span> hold
+          </a>
+          <p class="note" style="margin-top:0.65rem">Checkout URL is a placeholder until Creem is connected.</p>
+        </div>
+      </div>
+    </section>
+
+    <footer>
+      <div>Local Tab Workspaces · local-first Chrome extension</div>
+      <div>Questions? <a href="mailto:hello@example.com?subject=Local%20Tab%20Workspaces%20Early%20Access">hello@example.com</a> (replace)</div>
+    </footer>
+  </div>
+
+  <script>
+    (function () {
+      var form = document.getElementById("waitlist-form");
+      var status = document.getElementById("waitlist-status");
+      if (!form) return;
+      form.addEventListener("submit", function (e) {
+        e.preventDefault();
+        var email = (form.email && form.email.value || "").trim();
+        if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+          form.email.focus();
+          return;
+        }
+        var needSync = !!(form.need_sync && form.need_sync.checked);
+        try {
+          var key = "ltw_waitlist";
+          var list = JSON.parse(localStorage.getItem(key) || "[]");
+          list.push({ email: email, needSync: needSync, at: new Date().toISOString() });
+          localStorage.setItem(key, JSON.stringify(list));
+        } catch (err) { /* ignore quota / private mode */ }
+        status.classList.add("show");
+        form.reset();
+      });
+    })();
+  </script>
+</body>
+</html>
