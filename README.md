@@ -1,52 +1,25 @@
-# Local Tab Workspaces — Landing page
+# Local Tab Workspaces — marketing site (0.2.0)
 
-Bilingual (EN primary, CN secondary) Early Access page for the local-first Chrome tab workspace.
+Live: **https://localtabs.top**
 
-## Creem product website URL (use this — NOT github.io)
+This copy is the 0.2.0 working tree. Do not push from this executor. Deploy is a later step for Xi (GitHub Pages / existing custom domain).
 
-**https://localtabs.dpdns.org/**
+## What’s on the site
 
-- Host: ship.page anonymous HTTPS (static; verified HTTP 200)
-- Anonymous free plan expires ~**2026-11-20** (Asia/Shanghai ≈ 2026-11-20 20:06); claim to keep longer:
-  https://ship.page/claim?slug=grave-glider-tye4w&token=spc_4xmt7j7gztspwwt8di15q67x&via=api
-- Operator (legal name on site): **LIAO XIANG** — individual indie developer based in China (matches Creem merchant onboarding)
-- Support email: `lililiaoxiang0913@gmail.com`
-- Legal: `/privacy.html`, `/terms.html` (both name operator LIAO XIANG)
-- Primary CTA **Get Early Access — $1** → `https://www.creem.io/payment/prod_1sxcev5EyzFKkDzSRj3ZSs` (empty URL falls back to waitlist / “Checkout opening soon”)
-- Live site: `https://localtabs.dpdns.org`
-- Updated: 2026-10-21 Asia/Shanghai (UTC+8) — non-github.io deploy for Creem production-domain request
-
-## Mirror (GitHub Pages — backup only, do not submit to Creem)
-
-**https://go-mario.github.io/local-tab-workspaces/**
-
-- Repo: https://github.com/go-Mario/local-tab-workspaces
-- Commit with legal name: `c1a7840`
-
-## Short-lived backup
-
-https://local-tab-workspaces.beacon.host/ (anonymous ≈24h; expires ~2026-10-22 20:06 Asia/Shanghai)
-
-## Previous temporary URL (do not submit)
-
-https://squat-mocha-41.beacon.host/
-
-## Waitlist
-
-Form posts to **FormSubmit** → `lililiaoxiang0913@gmail.com` (endpoint alias `8a8116954090664d2c206e229cbb4e04`). Also keeps a localStorage copy.
+- Hero CTAs: **Install on Chrome Web Store** + **Unlock sync — $1** (Creem `https://www.creem.io/payment/prod_1sxcev5EyzFKkDzSRj3ZSs`)
+- Waitlist is optional “email me product updates” (FormSubmit → lililiaoxiang0913@gmail.com)
+- `/unlock` and `/unlock.html` — post-checkout license retrieval via `https://api.localtabs.top/v1/unlock`
+- Privacy / Terms updated 18 November 2026 (Asia/Shanghai) for paid encrypted sync
 
 ## Files
 
 | Path | Purpose |
 |------|---------|
-| `index.html` | Landing (CSS + light JS inline) |
+| `index.html` | Landing |
+| `unlock.html` / `unlock/index.html` | License unlock (both URLs work on GitHub Pages) |
 | `privacy.html` | Privacy Policy |
 | `terms.html` | Terms of Service |
-| `README.md` | This file |
 | `deploy-meta.json` | Deploy metadata |
+| `CNAME` | localtabs.top |
 
-## Re-deploy
-
-1. Edit files under `/workspace/landing` (and sync to `/workspace/landing-pages-deploy`).
-2. Push `landing-pages-deploy` to `main` for GitHub Pages mirror.
-3. Re-zip `index.html` + `privacy.html` + `terms.html` and `POST` to `https://ship.page/deploy` for the Creem-facing URL (or claim the existing slug).
+Operator: **LIAO XIANG**. Support: `lililiaoxiang0913@gmail.com`.
