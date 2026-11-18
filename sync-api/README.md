@@ -21,6 +21,8 @@ This directory is the API source. It does not change the marketing pages (`index
 
 `GET /v1/checkouts?checkout_id=` is the only documented retrieve call. On an unknown id Creem answers 404. The previous code did not read that body and then called an undocumented `/v1/checkouts/{id}`. Workers cancels the unread subrequest outside the awaited promise (`A stalled HTTP response was canceled to prevent deadlock`). `handleRequest` also returned handler promises without `await`, so the `try/catch` never saw the rejection. Cloudflare turns that into error **1101** instead of JSON. Node tests still returned 404, which is why 15/15 could pass.
 
+Global `fetch` is called as a function. Assigning it onto the env object and calling it as a method throws `TypeError: Illegal invocation` in workerd (`failureClass=type_error`, `failureReason=unknown`). A direct `fetch()` of the same URL returns an HTTP response.
+
 The client now always gets a small JSON error. Upstream bodies, exception text, and API keys are not copied into that JSON. A `502 upstream_unavailable` means this response is not a 404 or 400. Without an HTTP status it is not an authentication result. Creem's introduction and error-codes pages disagree on whether a bad key is 401 or 403; that disagreement does not apply when `fetch` never returned a response.
 
 ## Response diagnosis

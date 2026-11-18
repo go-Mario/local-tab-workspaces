@@ -30,7 +30,9 @@ export function resolveEnv(env: Env): ResolvedEnv {
     devGrantSecret: env.DEV_GRANT_SECRET ?? '',
     syncMaxBytes,
     extraOrigins,
-    creemFetch: env.creemFetch ?? fetch,
+    // Call global fetch as a function. Storing it on this object and invoking
+    // it as a method throws TypeError: Illegal invocation in workerd.
+    creemFetch: env.creemFetch ?? ((input, init) => fetch(input, init)),
     creemTimeoutMs: resolveCreemTimeoutMs(env.creemTimeoutMs),
     creemLog: env.creemLog ?? noopCreemLog,
     unlockDiag: env.UNLOCK_DIAG === '1',
