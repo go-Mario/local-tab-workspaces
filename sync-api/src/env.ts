@@ -32,21 +32,14 @@ export function resolveEnv(env: Env): ResolvedEnv {
     extraOrigins,
     creemFetch: env.creemFetch ?? fetch,
     creemTimeoutMs: resolveCreemTimeoutMs(env.creemTimeoutMs),
-    creemLog: env.creemLog ?? defaultCreemLog,
+    creemLog: env.creemLog ?? noopCreemLog,
+    unlockDiag: env.UNLOCK_DIAG === '1',
   }
 }
 
-function defaultCreemLog(event: CreemLogEvent): void {
-  const line: CreemLogEvent = { operation: event.operation, error: event.error }
-  if (
-    typeof event.upstreamStatus === 'number' &&
-    Number.isInteger(event.upstreamStatus) &&
-    event.upstreamStatus >= 100 &&
-    event.upstreamStatus <= 599
-  ) {
-    line.upstreamStatus = event.upstreamStatus
-  }
-  console.log(line)
+function noopCreemLog(_event: CreemLogEvent): void {
+  // Diagnosis is returned on the upstream_unavailable JSON body.
+  // console.log is not used: Workers log envelopes stored the request URL.
 }
 
 function resolveCreemTimeoutMs(raw: number | undefined): number {

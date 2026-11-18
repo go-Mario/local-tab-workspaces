@@ -56,6 +56,8 @@ export interface Env {
   DEV_GRANT_SECRET?: string
   SYNC_MAX_BYTES?: string
   ALLOWED_ORIGINS?: string
+  /** "1" adds safe fields on upstream_unavailable only. Any other value is off. */
+  UNLOCK_DIAG?: string
   /** Injected by the Node dev server / tests. */
   kv?: KV
   /** Test hook to mock Creem HTTP. Defaults to global fetch. */
@@ -65,7 +67,7 @@ export interface Env {
    * Production uses the default. Not a Worker binding.
    */
   creemTimeoutMs?: number
-  /** Test hook. Production writes one structured console log. */
+  /** Test hook. Production does not write logs. */
   creemLog?: CreemLogger
 }
 
@@ -82,6 +84,7 @@ export interface ResolvedEnv {
   creemFetch: FetchLike
   creemTimeoutMs: number
   creemLog: CreemLogger
+  unlockDiag: boolean
 }
 
 export interface LicenseInstance {

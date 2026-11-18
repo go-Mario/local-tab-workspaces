@@ -26,6 +26,9 @@ kv_namespaces = [
 CREEM_PRODUCT_ID = "prod_1sxcev5EyzFKkDzSRj3ZSs"
 CREEM_API_BASE = "https://api.creem.io"
 SYNC_MAX_BYTES = "1048576"
+# "1" adds failureClass / failureReason / baseIsExpected on upstream_unavailable only.
+# Set back to "0" to restore the original JSON. Any other value is off.
+UNLOCK_DIAG = "0"
 # ALLOW_DEV_GRANT must be omitted / not "1" in production.
 # ALLOWED_ORIGINS can add extra origins (comma-separated) if needed.
 
@@ -33,21 +36,7 @@ SYNC_MAX_BYTES = "1048576"
 #   npx wrangler secret put CREEM_API_KEY
 #   npx wrangler secret put CREEM_WEBHOOK_SECRET
 
-# Workers Logs, custom console.log only.
-# Docs, Workers Logs, updated 2026-11-12:
-# https://developers.cloudflare.com/workers/observability/logs/workers-logs/
-# Invocation logs include the fetch handler message (method + full request URL).
-# `invocation_logs = false` keeps console.log and drops that record.
-# Traces are separate. `observability.enabled` does not turn them on today
-# (https://developers.cloudflare.com/workers/observability/traces/); `enabled = false`
-# keeps them off. Do not enable Logpush or a tail consumer for this forensics pass.
+# Stay off. Workers log envelopes stored the request URL even when
+# invocation_logs and traces were false.
 [observability]
-enabled = true
-head_sampling_rate = 1
-
-[observability.logs]
-enabled = true
-invocation_logs = false
-
-[observability.traces]
 enabled = false

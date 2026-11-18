@@ -1,3 +1,4 @@
+import { diagFromBase, diagFromException, diagFromHeaderRejection, type FetchDiag } from './diag'
 import type { CreemLogError, CreemLogEvent, CreemLogOperation, ResolvedEnv } from './types'
 
 export interface CreemCheckout {
@@ -201,7 +202,7 @@ function emitCreem(
 
 type CreemCallResult =
   | { ok: true; response: Response }
-  | { ok: false; status: number; error: CreemClientError }
+  | { ok: false; status: number; error: CreemClientError; diag?: FetchDiag }
 
 async function creemRequest(
   env: ResolvedEnv,
@@ -213,13 +214,13 @@ async function creemRequest(
   const headers = new Headers(init.headers)
   if (env.creemApiKey && isUnsafeHeaderValue(env.creemApiKey)) {
     emitCreem(env, operation, 'header_rejected')
-    return { ok: false, status: 502, error: 'upstream_unavailable' }
+    return { ok: false, status: 502, error: 'upstream_unavailable', diag: diagFromHeaderRejection(env) }
   }
   try {
     if (env.creemApiKey) headers.set('x-api-key', env.creemApiKey)
-  } catch {
+  } catch (err) {
     emitCreem(env, operation, 'header_rejected')
-    return { ok: false, status: 502, error: 'upstream_unavailable' }
+    return { ok: false, status: 502, error: 'upstream_unavailable', diag: diagFromException(env, err) }
   }
   headers.set('Accept', 'application/json')
   const controller = new AbortController()
@@ -233,7 +234,7 @@ async function creemRequest(
       return { ok: false, status: 504, error: 'upstream_timeout' }
     }
     emitCreem(env, operation, 'network')
-    return { ok: false, status: 502, error: 'upstream_unavailable' }
+    return { ok: false, status: 502, error: 'upstream_unavailable', diag: diagFromException(env, err) }
   } finally {
     clearTimeout(timer)
   }
@@ -289,14 +290,14 @@ function classifyUpstream(
 export async function retrieveCheckout(
   env: ResolvedEnv,
   checkoutId: string,
-): Promise<{ checkout: CreemCheckout | null; status: number; error?: CreemClientError }> {
+): Promise<{ checkout: CreemCheckout | null; status: number; error?: CreemClientError; diag?: FetchDiag }> {
   if (!env.creemApiKey) {
     return { checkout: null, status: 500, error: 'creem_not_configured' }
   }
 
   const path = `/v1/checkouts?checkout_id=${encodeURIComponent(checkoutId)}`
   const called = await creemRequest(env, 'creem_checkout_retrieve', path, { method: 'GET' })
-  if (!called.ok) return { checkout: null, status: called.status, error: called.error }
+  if (!called.ok) return { checkout: null, status: called.status, error: called.error, diag: called.diag }
 
   const upstreamStatus = called.response.status
   // Status is classified even when the body is empty, non-JSON, or unreadable.
@@ -304,11 +305,16 @@ export async function retrieveCheckout(
   if (upstreamStatus !== 200) {
     const failure = classifyUpstream(upstreamStatus, 'checkout')
     emitCreem(env, 'creem_checkout_retrieve', failure.logError, upstreamStatus)
-    return { checkout: null, status: failure.status, error: failure.error }
+    return {
+      checkout: null,
+      status: failure.status,
+      error: failure.error,
+      diag: failure.error === 'upstream_unavailable' ? diagFromBase(env) : undefined,
+    }
   }
   if (text == null) {
     emitCreem(env, 'creem_checkout_retrieve', 'body_unreadable', upstreamStatus)
-    return { checkout: null, status: 502, error: 'upstream_unavailable' }
+    return { checkout: null, status: 502, error: 'upstream_unavailable', diag: diagFromBase(env) }
   }
 
   let data: unknown = null
@@ -317,7 +323,7 @@ export async function retrieveCheckout(
       data = JSON.parse(text)
     } catch {
       emitCreem(env, 'creem_checkout_retrieve', 'bad_json', upstreamStatus)
-      return { checkout: null, status: 502, error: 'upstream_unavailable' }
+      return { checkout: null, status: 502, error: 'upstream_unavailable', diag: diagFromBase(env) }
     }
   }
   const checkout = asCheckout(data)
@@ -338,7 +344,7 @@ export async function activateCreemLicense(
   env: ResolvedEnv,
   key: string,
   instanceName: string,
-): Promise<{ ok: true; data: CreemActivation } | { ok: false; status: number; error: CreemClientError }> {
+): Promise<{ ok: true; data: CreemActivation } | { ok: false; status: number; error: CreemClientError; diag?: FetchDiag }> {
   if (!env.creemApiKey) {
     return { ok: false, status: 500, error: 'creem_not_configured' }
   }
@@ -347,18 +353,23 @@ export async function activateCreemLicense(
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ key, instance_name: instanceName }),
   })
-  if (!called.ok) return { ok: false, status: called.status, error: called.error }
+  if (!called.ok) return { ok: false, status: called.status, error: called.error, diag: called.diag }
 
   const upstreamStatus = called.response.status
   const text = await readBodyCapped(called.response, MAX_CREEM_BODY_BYTES)
   if (!called.response.ok) {
     const failure = classifyUpstream(upstreamStatus, 'activate')
     emitCreem(env, 'creem_license_activate', failure.logError, upstreamStatus)
-    return { ok: false, status: failure.status, error: failure.error }
+    return {
+      ok: false,
+      status: failure.status,
+      error: failure.error,
+      diag: failure.error === 'upstream_unavailable' ? diagFromBase(env) : undefined,
+    }
   }
   if (text == null) {
     emitCreem(env, 'creem_license_activate', 'body_unreadable', upstreamStatus)
-    return { ok: false, status: 502, error: 'upstream_unavailable' }
+    return { ok: false, status: 502, error: 'upstream_unavailable', diag: diagFromBase(env) }
   }
 
   let data: unknown = null
@@ -366,11 +377,11 @@ export async function activateCreemLicense(
     data = text ? JSON.parse(text) : {}
   } catch {
     emitCreem(env, 'creem_license_activate', 'bad_json', upstreamStatus)
-    return { ok: false, status: 502, error: 'upstream_unavailable' }
+    return { ok: false, status: 502, error: 'upstream_unavailable', diag: diagFromBase(env) }
   }
   if (!data || typeof data !== 'object' || Array.isArray(data)) {
     emitCreem(env, 'creem_license_activate', 'bad_json', upstreamStatus)
-    return { ok: false, status: 502, error: 'upstream_unavailable' }
+    return { ok: false, status: 502, error: 'upstream_unavailable', diag: diagFromBase(env) }
   }
   return { ok: true, data: data as CreemActivation }
 }

@@ -18,6 +18,7 @@ import {
   retrieveCheckout,
 } from './creem'
 import { jsonResponse, preflightResponse } from './cors'
+import { publicDiag, type FetchDiag } from './diag'
 import { resolveEnv } from './env'
 import {
   getCheckout,
@@ -72,6 +73,10 @@ const CLIENT_ERRORS = new Set([
 
 function clientError(error: string | undefined, fallback: string): string {
   return error && CLIENT_ERRORS.has(error) ? error : fallback
+}
+
+function errorBody(env: ResolvedEnv, error: string, diag?: FetchDiag): Record<string, unknown> {
+  return { ok: false, error, ...publicDiag(env, error === 'upstream_unavailable' ? diag : undefined) }
 }
 
 const CHECKOUT_ID_RE = /^[A-Za-z0-9_-]{1,128}$/
@@ -257,12 +262,8 @@ async function handleUnlock(request: Request, env: ResolvedEnv, origin: string |
             : status === 500
               ? 'creem_not_configured'
               : 'upstream_unavailable'
-    return jsonResponse(
-      { ok: false, error: clientError(retrieved.error, fallback) },
-      status,
-      origin,
-      env,
-    )
+    const code = clientError(retrieved.error, fallback)
+    return jsonResponse(errorBody(env, code, retrieved.diag), status, origin, env)
   }
 
   const checkout = retrieved.checkout
@@ -324,12 +325,8 @@ async function handleActivate(request: Request, env: ResolvedEnv, origin: string
     const creem = await activateCreemLicense(env, key, instanceName)
     if (!creem.ok) {
       const status = [400, 404, 500, 502, 504].includes(creem.status) ? creem.status : 502
-      return jsonResponse(
-        { ok: false, error: clientError(creem.error, 'upstream_unavailable') },
-        status,
-        origin,
-        env,
-      )
+      const code = clientError(creem.error, 'upstream_unavailable')
+      return jsonResponse(errorBody(env, code, creem.diag), status, origin, env)
     }
     license = newLicenseRecord({
       key,
