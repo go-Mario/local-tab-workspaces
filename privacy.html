@@ -37,7 +37,7 @@
       <nav><a href="index.html">← Back to home</a></nav>
     </header>
     <h1>Privacy Policy</h1>
-    <p class="meta">Last updated: October 21, 2026 (privacy patch for Chrome Web Store) · Product: Local Tab Workspaces</p>
+    <p class="meta">Last updated: 18 November 2026 (Asia/Shanghai) · Product: Local Tab Workspaces</p>
     
     <p>This Privacy Policy explains how <strong style="color:var(--text)">Local Tab Workspaces</strong> (“the Product”, “we”, “I”) handles information. The Product is a local-first Chrome extension. The website and Creem store / Early Access offer are operated by <strong style="color:var(--text)">LIAO XIANG</strong>, an individual indie developer based in China (legal name matching merchant onboarding).</p>
 
@@ -48,21 +48,22 @@
     <p>If you enter an email on the Early Access waitlist form on this website, that address is sent to our form processor (<strong style="color:var(--text)">FormSubmit</strong>) so we can notify you about Early Access and product updates. We do not sell waitlist emails or use them for advertising lists. Do not submit an email if you do not want us to contact you about this Product.</p>
 
     <h2>3. Payments (Creem)</h2>
-    <p>If you purchase the <strong style="color:var(--text)">$1 Early Access seat hold</strong>, payment is processed by <strong style="color:var(--text)">Creem</strong> (Merchant of Record). We do not receive or store your full card details. Creem’s privacy practices apply to checkout data. Checkout: <a href="https://www.creem.io/payment/prod_1sxcev5EyzFKkDzSRj3ZSs">https://www.creem.io/payment/prod_1sxcev5EyzFKkDzSRj3ZSs</a>.</p>
+    <p>If you purchase the <strong style="color:var(--text)">$1 Early Access</strong> (a one-time purchase that unlocks optional cross-device sync), payment is processed by <strong style="color:var(--text)">Creem</strong> (Merchant of Record). We do not receive or store your full card details. Creem’s privacy practices apply to checkout data. Checkout: <a href="https://www.creem.io/payment/prod_1sxcev5EyzFKkDzSRj3ZSs">https://www.creem.io/payment/prod_1sxcev5EyzFKkDzSRj3ZSs</a>.</p>
 
-    <h2>4. Optional sync (future)</h2>
-    <p>Cross-device sync is an optional paid feature planned for later. If you enable sync, workspace data needed for that feature may be transmitted to our sync service under your account. Local save/restore remains available without sync.</p>
+    <h2>4. Optional paid sync (current)</h2>
+    <p>Cross-device sync is an optional, paid Early Access feature. It stays off until you unlock it with a license and turn sync on in the extension. If you enable sync, the extension encrypts your workspaces on your device (AES-GCM) and uploads only that <strong style="color:var(--text)">encrypted blob</strong> to our sync service at <strong style="color:var(--text)">api.localtabs.top</strong> (a Cloudflare Worker with KV storage). We cannot read tab URLs or titles from the stored blob. We also store license and device/instance metadata needed to enforce access (for example, a license key identifier, instance id, and a hashed session token). Payment continues to be processed by Creem; we do not receive your full card details. If you use the extension in local mode only (the default), <strong style="color:var(--text)">nothing is uploaded</strong> to the sync API. Local save, restore, and JSON export remain available without a license and work offline.</p>
 
     <h2>5. Chrome extension permissions</h2>
-    <p>The Chrome extension named <strong style="color:var(--text)">Local Tab Workspaces</strong> uses only these permissions:</p>
+    <p>The Chrome extension named <strong style="color:var(--text)">Local Tab Workspaces</strong> uses these permissions:</p>
     <ul>
       <li><strong style="color:var(--text)">tabs</strong> — to read tab metadata (URL, title, pinned state) in the current window when you save a workspace, and to create tabs or windows when you restore one. We do not use this permission to inject scripts into web pages or read page content beyond what the tabs API exposes.</li>
-      <li><strong style="color:var(--text)">storage</strong> — to keep workspaces and settings in <code style="color:var(--text)">chrome.storage.local</code> on your device so data survives browser restarts.</li>
+      <li><strong style="color:var(--text)">storage</strong> — to keep workspaces, settings, and (if you unlock sync) license metadata in <code style="color:var(--text)">chrome.storage.local</code> on your device so data survives browser restarts.</li>
+      <li><strong style="color:var(--text)">host access to https://api.localtabs.top/* only</strong> — to activate a license and to upload or download the encrypted sync blob if you turn sync on. We do not request access to other websites, <code style="color:var(--text)">&lt;all_urls&gt;</code>, identity, or downloads.</li>
     </ul>
     <p>We do not request broad host permissions (such as access to all websites).</p>
 
-    <h2>6. What we do not upload (current version)</h2>
-    <p>In the current extension version, while optional sync is not enabled, <strong style="color:var(--text)">tab URLs and titles are not uploaded to our servers</strong>. They remain on your device in local extension storage (and in any JSON export file you choose to download).</p>
+    <h2>6. What we do not upload</h2>
+    <p>In local mode (sync off, the default), <strong style="color:var(--text)">tab URLs and titles are not uploaded to our servers</strong>. They remain on your device in local extension storage (and in any JSON export file you choose to download). When you enable paid sync, only an encrypted blob is uploaded; we cannot read the URLs or titles it contains.</p>
 
     <h2>7. Your controls</h2>
     <p>You can export workspaces as JSON at any time from the extension, delete individual workspaces in the UI, or remove all extension data by uninstalling the extension or clearing extension data in Chrome.</p>

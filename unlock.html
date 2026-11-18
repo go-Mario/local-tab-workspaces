@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Unlock sync — Local Tab Workspaces</title>
+  <meta name="description" content="Retrieve your Local Tab Workspaces Early Access license key and unlock optional encrypted cross-device sync." />
+  <style>
+    :root {
+      --bg: #0b0f14; --bg-elev: #121821; --border: #243044;
+      --text: #e8eef7; --muted: #93a0b4; --accent: #5b8cff; --accent-hover: #7aa0ff;
+      --ok: #3ddc97; --warn: #f5a524;
+      --font: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, "PingFang SC", "Noto Sans SC", "Microsoft YaHei", sans-serif;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; font-family: var(--font); color: var(--text); line-height: 1.65;
+      background: radial-gradient(1200px 600px at 10% -10%, rgba(91,140,255,0.18), transparent 55%), var(--bg);
+      -webkit-font-smoothing: antialiased;
+    }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { color: var(--accent-hover); }
+    .wrap { width: min(720px, calc(100% - 2rem)); margin: 0 auto; padding: 1.5rem 0 3rem; }
+    header { display: flex; justify-content: space-between; align-items: center; gap: 1rem; padding: 0.5rem 0 1.5rem; border-bottom: 1px solid var(--border); margin-bottom: 1.75rem; }
+    .logo { font-weight: 650; letter-spacing: -0.02em; }
+    h1 { font-size: 1.75rem; letter-spacing: -0.03em; margin: 0 0 0.35rem; }
+    .meta { color: var(--muted); font-size: 0.9rem; margin: 0 0 1.5rem; }
+    h2 { font-size: 1.1rem; margin: 1.6rem 0 0.45rem; letter-spacing: -0.02em; }
+    p, li { color: var(--muted); font-size: 0.95rem; }
+    ol { padding-left: 1.2rem; }
+    .card {
+      background: var(--bg-elev); border: 1px solid var(--border); border-radius: 14px;
+      padding: 1.15rem 1.2rem; margin: 1rem 0;
+    }
+    .key {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 0.95rem; color: var(--text); word-break: break-all;
+      background: #0b0f14; border: 1px solid var(--border); border-radius: 8px;
+      padding: 0.75rem 0.9rem; margin: 0.5rem 0 0.75rem;
+    }
+    .status { margin: 0; }
+    .status.ok { color: var(--ok); }
+    .status.warn { color: var(--warn); }
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center;
+      border: 1px solid var(--border); background: transparent; color: var(--text);
+      border-radius: 10px; padding: 0.55rem 0.9rem; font-weight: 600; cursor: pointer; font-size: 0.9rem;
+    }
+    .btn:hover { border-color: var(--accent); color: #fff; }
+    footer { margin-top: 2.5rem; padding-top: 1.25rem; border-top: 1px solid var(--border); color: #6f7d93; font-size: 0.85rem; display: flex; flex-wrap: wrap; gap: 0.75rem 1.25rem; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <a class="logo" href="index.html">Local Tab Workspaces</a>
+      <nav><a href="index.html">← Back to home</a></nav>
+    </header>
+    <h1>Unlock cross-device sync</h1>
+    <p class="meta">$1 Early Access is a one-time purchase. Local save, restore, and JSON stay free.</p>
+
+    <div class="card">
+      <p class="status" id="status">Looking up your checkout…</p>
+      <div id="key-block" hidden>
+        <p>Your license key:</p>
+        <div class="key" id="license-key"></div>
+        <button type="button" class="btn" id="btn-copy">Copy key</button>
+      </div>
+    </div>
+
+    <h2>Next steps</h2>
+    <ol>
+      <li>Install <a href="https://chromewebstore.google.com/detail/local-tab-workspaces/adpnoccebkjackmkebecdcnenlgkcdah">Local Tab Workspaces</a> from the Chrome Web Store if you have not already.</li>
+      <li>Open the extension popup → <strong style="color:var(--text)">我有许可密钥</strong> → paste the key → Activate.</li>
+      <li>Turn on <strong style="color:var(--text)">跨设备同步</strong>. Workspaces are encrypted on your device before they are uploaded.</li>
+    </ol>
+    <p>If this page cannot reach the API, look for the key in your Creem receipt email or customer portal, then paste it in the extension.</p>
+
+    <p><a href="https://www.creem.io/payment/prod_1sxcev5EyzFKkDzSRj3ZSs">Pay $1 to unlock sync</a> if you do not have a checkout yet.</p>
+
+    <footer>
+      <div><a href="index.html">Home</a> · <a href="privacy.html">Privacy</a> · <a href="terms.html">Terms</a></div>
+      <div>Operated by LIAO XIANG · Support: <a href="mailto:lililiaoxiang0913@gmail.com">lililiaoxiang0913@gmail.com</a></div>
+    </footer>
+  </div>
+  <script>
+    (function () {
+      var API = "https://api.localtabs.top";
+      var EXT_ID = "adpnoccebkjackmkebecdcnenlgkcdah";
+      var statusEl = document.getElementById("status");
+      var keyBlock = document.getElementById("key-block");
+      var keyEl = document.getElementById("license-key");
+      var btnCopy = document.getElementById("btn-copy");
+      var params = new URLSearchParams(window.location.search);
+      var checkoutId = (params.get("checkout_id") || params.get("checkoutId") || "").trim();
+
+      function setStatus(text, kind) {
+        statusEl.textContent = text;
+        statusEl.className = "status" + (kind ? " " + kind : "");
+      }
+
+      function showKey(key) {
+        keyEl.textContent = key;
+        keyBlock.hidden = false;
+        tryActivate(key);
+      }
+
+      function tryActivate(licenseKey) {
+        var runtime = window.chrome && window.chrome.runtime;
+        if (!runtime || typeof runtime.sendMessage !== "function") return;
+        try {
+          runtime.sendMessage(EXT_ID, { type: "ltw.activate", licenseKey: licenseKey }, function (response) {
+            var err = runtime.lastError;
+            if (err) return;
+            if (response && response.ok) {
+              setStatus("License received and the installed extension was activated. Open the popup and turn on sync.", "ok");
+            }
+          });
+        } catch (e) { /* ignore — user can paste manually */ }
+      }
+
+      btnCopy.addEventListener("click", function () {
+        var key = keyEl.textContent || "";
+        if (!key) return;
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(key).then(function () {
+            btnCopy.textContent = "Copied";
+          }).catch(function () {});
+        }
+      });
+
+      if (!checkoutId) {
+        setStatus("No checkout_id in the URL. After paying, Creem should redirect you here. You can also paste the key from your Creem receipt in the extension (我有许可密钥).", "warn");
+        return;
+      }
+
+      fetch(API + "/v1/unlock?checkout_id=" + encodeURIComponent(checkoutId), {
+        method: "GET",
+        headers: { "Accept": "application/json" }
+      }).then(function (res) {
+        return res.json().catch(function () { return {}; }).then(function (data) {
+          return { ok: res.ok, status: res.status, data: data };
+        });
+      }).then(function (result) {
+        if (result.ok && result.data && result.data.licenseKey) {
+          setStatus("Payment found. Save this license key, then activate it in the extension.", "ok");
+          showKey(result.data.licenseKey);
+          return;
+        }
+        setStatus(
+          "We could not retrieve a license from the API yet (status " + result.status + "). Check your Creem receipt email or customer portal for the key, then paste it in the extension under 我有许可密钥. If the sync API is not deployed yet, the key will appear here once it is.",
+          "warn"
+        );
+      }).catch(function () {
+        setStatus(
+          "The unlock API (api.localtabs.top) could not be reached. Your key should also be in the Creem receipt email or customer portal — paste it in the extension under 我有许可密钥.",
+          "warn"
+        );
+      });
+    })();
+  </script>
+</body>
+</html>
