@@ -2,7 +2,7 @@ import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import worker from '../src/index'
 import { pickInstanceId } from '../src/creem'
-import type { Env, FetchLike } from '../src/types'
+import type { CreemLogEvent, Env, FetchLike } from '../src/types'
 import { makeCtx, call, paidCheckout, signedWebhook } from './helpers'
 
 const LEAK = 'upstream-secret-marker-do-not-echo'
@@ -231,4 +231,157 @@ test('pickInstanceId uses LicenseInstanceEntity.id, not the license id', () => {
   assert.equal(pickInstanceId(official, 'fallback', 'device-a'), 'linst_REAL_INSTANCE')
   assert.equal(pickInstanceId({ id: 'lic_only' }, 'fallback', 'device-a'), 'fallback')
   assert.equal(pickInstanceId({ instance_id: 'legacy_inst' }, 'fallback'), 'legacy_inst')
+})
+
+const PROBE_ID = 'ch_ltw_verify_probe_nonexistent'
+const LOG_KEYS = new Set(['operation', 'error', 'upstreamStatus'])
+
+function watch(env: Env): CreemLogEvent[] {
+  const events: CreemLogEvent[] = []
+  env.creemLog = (event) => {
+    events.push(event)
+  }
+  return events
+}
+
+function assertSafeLog(events: CreemLogEvent[], secretBits: string[]): void {
+  assert.equal(events.length, 1)
+  const event = events[0]!
+  for (const key of Object.keys(event)) {
+    assert.equal(LOG_KEYS.has(key), true, key)
+  }
+  const encoded = JSON.stringify(event)
+  for (const bit of secretBits) {
+    assert.equal(encoded.includes(bit), false, bit)
+  }
+  assert.equal(event.operation, 'creem_checkout_retrieve')
+}
+
+test('non-JSON 404 and an unreadable 404 stay checkout_not_found', async () => {
+  const plain = makeCtx({
+    creemFetch: async () => new Response('plain-not-found ' + LEAK, { status: 404 }),
+  })
+  const plainLogs = watch(plain.env)
+  const plainRes = await call(plain.env, 'GET', `/v1/unlock?checkout_id=${PROBE_ID}`)
+  assert.equal(plainRes.status, 404)
+  assert.deepEqual(plainRes.json, { ok: false, error: 'checkout_not_found' })
+  assert.equal(plainRes.text.includes(LEAK), false)
+  assertSafeLog(plainLogs, [PROBE_ID, LEAK, 'plain-not-found'])
+  assert.equal(plainLogs[0]!.error, 'checkout_not_found')
+  assert.equal(plainLogs[0]!.upstreamStatus, 404)
+
+  const broken = new ReadableStream({
+    pull(controller) {
+      controller.error(new Error(LEAK))
+    },
+  })
+  const unread = makeCtx({
+    creemFetch: async () => new Response(broken, { status: 404 }),
+  })
+  const unreadLogs = watch(unread.env)
+  const unreadRes = await call(unread.env, 'GET', `/v1/unlock?checkout_id=${PROBE_ID}`)
+  assert.equal(unreadRes.status, 404)
+  assert.equal(unreadRes.json.error, 'checkout_not_found')
+  assert.equal(unreadRes.text.includes(LEAK), false)
+  assertSafeLog(unreadLogs, [PROBE_ID, LEAK])
+  assert.equal(unreadLogs[0]!.upstreamStatus, 404)
+})
+
+test('non-JSON 400 stays invalid_checkout', async () => {
+  const ctx = makeCtx({
+    creemFetch: async () =>
+      new Response('<html>validation ' + LEAK + '</html>', {
+        status: 400,
+        headers: { 'content-type': 'text/html' },
+      }),
+  })
+  const logs = watch(ctx.env)
+  const res = await call(ctx.env, 'GET', `/v1/unlock?checkout_id=${PROBE_ID}`)
+  assert.equal(res.status, 400)
+  assert.deepEqual(res.json, { ok: false, error: 'invalid_checkout' })
+  assert.equal(res.text.includes(LEAK), false)
+  assertSafeLog(logs, [PROBE_ID, LEAK, 'validation'])
+  assert.equal(logs[0]!.error, 'invalid_checkout')
+  assert.equal(logs[0]!.upstreamStatus, 400)
+})
+
+test('401 and 403 stay 502 and are logged as distinct categories', async () => {
+  const cases = [
+    { status: 401, error: 'upstream_unauthorized' },
+    { status: 403, error: 'upstream_forbidden' },
+    { status: 500, error: 'upstream_status' },
+  ]
+  for (const item of cases) {
+    const ctx = makeCtx({
+      creemFetch: async () =>
+        new Response(JSON.stringify({ message: LEAK, checkout_id: PROBE_ID, token: 'tok_secret' }), {
+          status: item.status,
+        }),
+    })
+    const logs = watch(ctx.env)
+    const res = await call(ctx.env, 'GET', `/v1/unlock?checkout_id=${PROBE_ID}`)
+    assert.equal(res.status, 502, String(item.status))
+    assert.deepEqual(res.json, { ok: false, error: 'upstream_unavailable' }, String(item.status))
+    assert.equal(res.text.includes(LEAK), false)
+    assert.equal(res.text.includes('tok_secret'), false)
+    assertSafeLog(logs, [PROBE_ID, LEAK, 'tok_secret'])
+    assert.equal(logs[0]!.error, item.error, String(item.status))
+    assert.equal(logs[0]!.upstreamStatus, item.status)
+  }
+})
+
+test('a control character in the API key is header_rejected and does not call Creem', async () => {
+  let called = false
+  const ctx = makeCtx({
+    CREEM_API_KEY: 'test-key\n',
+    creemFetch: async () => {
+      called = true
+      return new Response('{}', { status: 200 })
+    },
+  })
+  const logs = watch(ctx.env)
+  const res = await call(ctx.env, 'GET', `/v1/unlock?checkout_id=${PROBE_ID}`)
+  assert.equal(res.status, 502)
+  assert.equal(res.json.error, 'upstream_unavailable')
+  assert.equal(called, false)
+  assertSafeLog(logs, [PROBE_ID, 'test-key'])
+  assert.equal(logs[0]!.error, 'header_rejected')
+  assert.equal('upstreamStatus' in logs[0]!, false)
+})
+
+test('network and timeout logs omit upstreamStatus', async () => {
+  const network = makeCtx({
+    creemFetch: async () => {
+      throw new Error('connect ' + LEAK)
+    },
+  })
+  const networkLogs = watch(network.env)
+  const networkRes = await call(network.env, 'GET', `/v1/unlock?checkout_id=${PROBE_ID}`)
+  assert.equal(networkRes.status, 502)
+  assert.equal(networkRes.json.error, 'upstream_unavailable')
+  assertSafeLog(networkLogs, [PROBE_ID, LEAK])
+  assert.equal(networkLogs[0]!.error, 'network')
+  assert.equal('upstreamStatus' in networkLogs[0]!, false)
+
+  const timeout = makeCtx({
+    creemTimeoutMs: 30,
+    creemFetch: (_input, init) =>
+      new Promise((_resolve, reject) => {
+        const fail = () => {
+          const err = new Error(LEAK)
+          err.name = 'AbortError'
+          reject(err)
+        }
+        const signal = init?.signal
+        if (!signal || signal.aborted) fail()
+        else signal.addEventListener('abort', fail, { once: true })
+      }),
+  })
+  const timeoutLogs = watch(timeout.env)
+  const timeoutRes = await call(timeout.env, 'GET', `/v1/unlock?checkout_id=${PROBE_ID}`)
+  assert.equal(timeoutRes.status, 504)
+  assert.equal(timeoutRes.json.error, 'upstream_timeout')
+  assertSafeLog(timeoutLogs, [PROBE_ID, LEAK])
+  assert.equal(timeoutLogs[0]!.error, 'timeout')
+  assert.equal('upstreamStatus' in timeoutLogs[0]!, false)
 })

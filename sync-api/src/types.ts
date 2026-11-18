@@ -20,6 +20,32 @@ export type FetchLike = (
   init?: RequestInit,
 ) => Promise<Response>
 
+/** Fixed categories for Creem diagnostics. Never put request data in `error`. */
+export type CreemLogError =
+  | 'checkout_not_found'
+  | 'invalid_checkout'
+  | 'upstream_unauthorized'
+  | 'upstream_forbidden'
+  | 'upstream_status'
+  | 'bad_json'
+  | 'body_unreadable'
+  | 'timeout'
+  | 'network'
+  | 'header_rejected'
+  | 'unknown_key'
+  | 'activate_rejected'
+
+export type CreemLogOperation = 'creem_checkout_retrieve' | 'creem_license_activate'
+
+/** The only fields a Creem diagnostic log may contain. */
+export interface CreemLogEvent {
+  operation: CreemLogOperation
+  error: CreemLogError
+  upstreamStatus?: number
+}
+
+export type CreemLogger = (event: CreemLogEvent) => void
+
 export interface Env {
   LTW_KV?: CloudflareKVBinding
   CREEM_API_KEY?: string
@@ -39,6 +65,8 @@ export interface Env {
    * Production uses the default. Not a Worker binding.
    */
   creemTimeoutMs?: number
+  /** Test hook. Production writes one structured console log. */
+  creemLog?: CreemLogger
 }
 
 export interface ResolvedEnv {
@@ -53,6 +81,7 @@ export interface ResolvedEnv {
   extraOrigins: string[]
   creemFetch: FetchLike
   creemTimeoutMs: number
+  creemLog: CreemLogger
 }
 
 export interface LicenseInstance {

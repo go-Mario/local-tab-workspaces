@@ -1,4 +1,4 @@
-import type { ResolvedEnv } from './types'
+import type { CreemLogError, CreemLogEvent, CreemLogOperation, ResolvedEnv } from './types'
 
 export interface CreemCheckout {
   id?: string
@@ -173,20 +173,52 @@ async function readBodyCapped(res: Response, maxBytes: number): Promise<string |
   return new TextDecoder('utf-8', { fatal: false }).decode(buf)
 }
 
+function isUnsafeHeaderValue(value: string): boolean {
+  for (let i = 0; i < value.length; i++) {
+    const code = value.charCodeAt(i)
+    if (code <= 0x1f || code === 0x7f) return true
+  }
+  return false
+}
+
+function emitCreem(
+  env: ResolvedEnv,
+  operation: CreemLogOperation,
+  error: CreemLogError,
+  upstreamStatus?: number,
+): void {
+  const event: CreemLogEvent = { operation, error }
+  if (
+    typeof upstreamStatus === 'number' &&
+    Number.isInteger(upstreamStatus) &&
+    upstreamStatus >= 100 &&
+    upstreamStatus <= 599
+  ) {
+    event.upstreamStatus = upstreamStatus
+  }
+  env.creemLog(event)
+}
+
 type CreemCallResult =
   | { ok: true; response: Response }
   | { ok: false; status: number; error: CreemClientError }
 
 async function creemRequest(
   env: ResolvedEnv,
+  operation: CreemLogOperation,
   path: string,
   init: RequestInit,
 ): Promise<CreemCallResult> {
   const url = path.startsWith('http') ? path : `${env.creemApiBase}${path}`
   const headers = new Headers(init.headers)
+  if (env.creemApiKey && isUnsafeHeaderValue(env.creemApiKey)) {
+    emitCreem(env, operation, 'header_rejected')
+    return { ok: false, status: 502, error: 'upstream_unavailable' }
+  }
   try {
     if (env.creemApiKey) headers.set('x-api-key', env.creemApiKey)
   } catch {
+    emitCreem(env, operation, 'header_rejected')
     return { ok: false, status: 502, error: 'upstream_unavailable' }
   }
   headers.set('Accept', 'application/json')
@@ -197,8 +229,10 @@ async function creemRequest(
     return { ok: true, response }
   } catch (err) {
     if (isAbortError(err) || controller.signal.aborted) {
+      emitCreem(env, operation, 'timeout')
       return { ok: false, status: 504, error: 'upstream_timeout' }
     }
+    emitCreem(env, operation, 'network')
     return { ok: false, status: 502, error: 'upstream_unavailable' }
   } finally {
     clearTimeout(timer)
@@ -219,18 +253,30 @@ function asCheckout(data: unknown): CreemCheckout | null {
   return rec as CreemCheckout
 }
 
-function checkoutFailure(status: number): { status: number; error: CreemClientError } {
-  if (status === 404) return { status: 404, error: 'checkout_not_found' }
-  if (status === 400 || status === 422) return { status: 400, error: 'invalid_checkout' }
-  if (status === 408 || status === 504) return { status: 504, error: 'upstream_timeout' }
-  return { status: 502, error: 'upstream_unavailable' }
-}
-
-function activateFailure(status: number): { status: number; error: CreemClientError } {
-  if (status === 404) return { status: 404, error: 'unknown_key' }
-  if (status === 400 || status === 422) return { status: 400, error: 'activate_rejected' }
-  if (status === 408 || status === 504) return { status: 504, error: 'upstream_timeout' }
-  return { status: 502, error: 'upstream_unavailable' }
+function classifyUpstream(
+  status: number,
+  kind: 'checkout' | 'activate',
+): { status: number; error: CreemClientError; logError: CreemLogError } {
+  if (status === 404) {
+    return kind === 'checkout'
+      ? { status: 404, error: 'checkout_not_found', logError: 'checkout_not_found' }
+      : { status: 404, error: 'unknown_key', logError: 'unknown_key' }
+  }
+  if (status === 400 || status === 422) {
+    return kind === 'checkout'
+      ? { status: 400, error: 'invalid_checkout', logError: 'invalid_checkout' }
+      : { status: 400, error: 'activate_rejected', logError: 'activate_rejected' }
+  }
+  if (status === 401) {
+    return { status: 502, error: 'upstream_unavailable', logError: 'upstream_unauthorized' }
+  }
+  if (status === 403) {
+    return { status: 502, error: 'upstream_unavailable', logError: 'upstream_forbidden' }
+  }
+  if (status === 408 || status === 504) {
+    return { status: 504, error: 'upstream_timeout', logError: 'timeout' }
+  }
+  return { status: 502, error: 'upstream_unavailable', logError: 'upstream_status' }
 }
 
 /**
@@ -249,15 +295,20 @@ export async function retrieveCheckout(
   }
 
   const path = `/v1/checkouts?checkout_id=${encodeURIComponent(checkoutId)}`
-  const called = await creemRequest(env, path, { method: 'GET' })
+  const called = await creemRequest(env, 'creem_checkout_retrieve', path, { method: 'GET' })
   if (!called.ok) return { checkout: null, status: called.status, error: called.error }
 
+  const upstreamStatus = called.response.status
+  // Status is classified even when the body is empty, non-JSON, or unreadable.
   const text = await readBodyCapped(called.response, MAX_CREEM_BODY_BYTES)
-  if (text == null) return { checkout: null, status: 502, error: 'upstream_unavailable' }
-
-  if (called.response.status !== 200) {
-    const failure = checkoutFailure(called.response.status)
+  if (upstreamStatus !== 200) {
+    const failure = classifyUpstream(upstreamStatus, 'checkout')
+    emitCreem(env, 'creem_checkout_retrieve', failure.logError, upstreamStatus)
     return { checkout: null, status: failure.status, error: failure.error }
+  }
+  if (text == null) {
+    emitCreem(env, 'creem_checkout_retrieve', 'body_unreadable', upstreamStatus)
+    return { checkout: null, status: 502, error: 'upstream_unavailable' }
   }
 
   let data: unknown = null
@@ -265,11 +316,15 @@ export async function retrieveCheckout(
     try {
       data = JSON.parse(text)
     } catch {
+      emitCreem(env, 'creem_checkout_retrieve', 'bad_json', upstreamStatus)
       return { checkout: null, status: 502, error: 'upstream_unavailable' }
     }
   }
   const checkout = asCheckout(data)
-  if (!checkout) return { checkout: null, status: 404, error: 'checkout_not_found' }
+  if (!checkout) {
+    emitCreem(env, 'creem_checkout_retrieve', 'checkout_not_found', upstreamStatus)
+    return { checkout: null, status: 404, error: 'checkout_not_found' }
+  }
   return { checkout, status: 200 }
 }
 
@@ -287,27 +342,34 @@ export async function activateCreemLicense(
   if (!env.creemApiKey) {
     return { ok: false, status: 500, error: 'creem_not_configured' }
   }
-  const called = await creemRequest(env, '/v1/licenses/activate', {
+  const called = await creemRequest(env, 'creem_license_activate', '/v1/licenses/activate', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ key, instance_name: instanceName }),
   })
   if (!called.ok) return { ok: false, status: called.status, error: called.error }
 
+  const upstreamStatus = called.response.status
   const text = await readBodyCapped(called.response, MAX_CREEM_BODY_BYTES)
-  if (text == null) return { ok: false, status: 502, error: 'upstream_unavailable' }
   if (!called.response.ok) {
-    const failure = activateFailure(called.response.status)
+    const failure = classifyUpstream(upstreamStatus, 'activate')
+    emitCreem(env, 'creem_license_activate', failure.logError, upstreamStatus)
     return { ok: false, status: failure.status, error: failure.error }
+  }
+  if (text == null) {
+    emitCreem(env, 'creem_license_activate', 'body_unreadable', upstreamStatus)
+    return { ok: false, status: 502, error: 'upstream_unavailable' }
   }
 
   let data: unknown = null
   try {
     data = text ? JSON.parse(text) : {}
   } catch {
+    emitCreem(env, 'creem_license_activate', 'bad_json', upstreamStatus)
     return { ok: false, status: 502, error: 'upstream_unavailable' }
   }
   if (!data || typeof data !== 'object' || Array.isArray(data)) {
+    emitCreem(env, 'creem_license_activate', 'bad_json', upstreamStatus)
     return { ok: false, status: 502, error: 'upstream_unavailable' }
   }
   return { ok: true, data: data as CreemActivation }

@@ -3,6 +3,7 @@ import {
   DEFAULT_CREEM_API_BASE,
   DEFAULT_PRODUCT_ID,
   DEFAULT_SYNC_MAX_BYTES,
+  type CreemLogEvent,
   type Env,
   type ResolvedEnv,
 } from './types'
@@ -31,7 +32,21 @@ export function resolveEnv(env: Env): ResolvedEnv {
     extraOrigins,
     creemFetch: env.creemFetch ?? fetch,
     creemTimeoutMs: resolveCreemTimeoutMs(env.creemTimeoutMs),
+    creemLog: env.creemLog ?? defaultCreemLog,
   }
+}
+
+function defaultCreemLog(event: CreemLogEvent): void {
+  const line: CreemLogEvent = { operation: event.operation, error: event.error }
+  if (
+    typeof event.upstreamStatus === 'number' &&
+    Number.isInteger(event.upstreamStatus) &&
+    event.upstreamStatus >= 100 &&
+    event.upstreamStatus <= 599
+  ) {
+    line.upstreamStatus = event.upstreamStatus
+  }
+  console.log(line)
 }
 
 function resolveCreemTimeoutMs(raw: number | undefined): number {
