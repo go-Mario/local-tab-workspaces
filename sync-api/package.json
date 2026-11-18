@@ -1,0 +1,21 @@
+{
+  "name": "localtabs-sync-api",
+  "version": "0.2.0",
+  "private": true,
+  "type": "module",
+  "description": "Local Tab Workspaces sync + license API (Cloudflare Worker)",
+  "scripts": {
+    "build": "tsc --noEmit",
+    "dev": "tsx src/dev-server.ts",
+    "test": "tsx --test test/*.test.ts"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2",
+    "wrangler": "^4.164.0"
+  },
+  "dependencies": {
+    "esbuild": "^0.25.0"
+  }
+}

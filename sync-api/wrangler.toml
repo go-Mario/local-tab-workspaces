@@ -1,0 +1,42 @@
+# Local Tab Workspaces sync API
+# Deploy: see /workspace/ltw-0.2/docs/DEPLOY-SYNC-API.md
+# Do not put API keys or webhook secrets in this file.
+
+name = "localtabs-sync-api"
+main = "src/index.ts"
+compatibility_date = "2026-11-18"
+
+# Placeholder KV id. Production already has a real LTW_KV namespace.
+# Before `wrangler deploy`, replace this id with that existing namespace.
+# Do not create a second namespace and do not deploy this placeholder.
+kv_namespaces = [
+  { binding = "LTW_KV", id = "00000000000000000000000000000000" }
+]
+
+# Custom domain notes:
+#   1. Deploy the worker (`npx wrangler deploy`)
+#   2. Add a CNAME: api.localtabs.top → <worker>.<account>.workers.dev
+#      (or attach a custom domain / route in the Cloudflare dashboard)
+# Example route (uncomment and set the real zone after DNS is ready):
+# routes = [
+#   { pattern = "api.localtabs.top/*", zone_name = "localtabs.top" }
+# ]
+
+[vars]
+CREEM_PRODUCT_ID = "prod_1sxcev5EyzFKkDzSRj3ZSs"
+CREEM_API_BASE = "https://api.creem.io"
+SYNC_MAX_BYTES = "1048576"
+# "1" adds failureClass / failureReason / baseIsExpected on upstream_unavailable only.
+# Set back to "0" to restore the original JSON. Any other value is off.
+UNLOCK_DIAG = "0"
+# ALLOW_DEV_GRANT must be omitted / not "1" in production.
+# ALLOWED_ORIGINS can add extra origins (comma-separated) if needed.
+
+# Secrets (set with wrangler, never commit):
+#   npx wrangler secret put CREEM_API_KEY
+#   npx wrangler secret put CREEM_WEBHOOK_SECRET
+
+# Stay off. Workers log envelopes stored the request URL even when
+# invocation_logs and traces were false.
+[observability]
+enabled = false
